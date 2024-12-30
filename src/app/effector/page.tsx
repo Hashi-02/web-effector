@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from "react";
 
 export default function EffectorPage() {
   const [inputDevices, setInputDevices] = useState<MediaDeviceInfo[]>([]);
@@ -22,15 +22,17 @@ export default function EffectorPage() {
 
         // すべてのデバイスを取得
         const devices = await navigator.mediaDevices.enumerateDevices();
-         
+
         // 音声入力（audioinput）と音声出力（audiooutput）のみフィルタリング
-        const inputs = devices.filter((device) => device.kind === 'audioinput');
-        const outputs = devices.filter((device) => device.kind === 'audiooutput');
+        const inputs = devices.filter((device) => device.kind === "audioinput");
+        const outputs = devices.filter(
+          (device) => device.kind === "audiooutput"
+        );
 
         setInputDevices(inputs);
         setOutputDevices(outputs);
       } catch (error) {
-        console.error('Error accessing media devices:', error);
+        console.error("Error accessing media devices:", error);
       }
     };
     fetchDevices();
@@ -39,7 +41,7 @@ export default function EffectorPage() {
   const startAudio = async () => {
     // 機器が選ばれていなかった時にエラーを出す
     if (!selectedInput || !selectedOutput) {
-      alert('機器を選択してください');
+      alert("機器を選択してください");
       return;
     }
 
@@ -65,12 +67,21 @@ export default function EffectorPage() {
 
         const sampleRate = audioContext.sampleRate;
         const length = sampleRate * 10; // 10秒間のリバーブ
-        const impulseResponse = audioContext.createBuffer(2, length, sampleRate);
+        const impulseResponse = audioContext.createBuffer(
+          2,
+          length,
+          sampleRate
+        );
 
-        for (let channel = 0; channel < impulseResponse.numberOfChannels; channel++) {
+        for (
+          let channel = 0;
+          channel < impulseResponse.numberOfChannels;
+          channel++
+        ) {
           const channelData = impulseResponse.getChannelData(channel);
           for (let i = 0; i < length; i++) {
-            channelData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2);
+            channelData[i] =
+              (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2);
           }
         }
 
@@ -86,7 +97,7 @@ export default function EffectorPage() {
 
       // 出力デバイスを設定
       await audioElement.setSinkId(selectedOutput).catch((error) => {
-        console.error('Error setting sink ID:', error);
+        console.error("Error setting sink ID:", error);
       });
 
       // ノード接続
@@ -101,22 +112,19 @@ export default function EffectorPage() {
       audioElement.srcObject = stream;
       audioElement.play();
     } catch (error) {
-      console.error('Error starting audio:', error);
+      console.error("Error starting audio:", error);
     }
   };
 
   return (
-    <div >
-      <h1 >Effector Page</h1>
+    <div>
+      <h1>Effector Page</h1>
 
       {/* 音声入力デバイス */}
-      <div >
-        <label htmlFor="inputDevice" >
-          Select Input Device
-        </label>
+      <div>
+        <label htmlFor="inputDevice">Select Input Device</label>
         <select
           id="inputDevice"
-          
           onChange={(e) => setSelectedInput(e.target.value)}
         >
           <option value="">Select an Input Device</option>
@@ -129,13 +137,10 @@ export default function EffectorPage() {
       </div>
 
       {/* 音声出力デバイス */}
-      <div >
-        <label htmlFor="outputDevice">
-          Select Output Device
-        </label>
+      <div>
+        <label htmlFor="outputDevice">Select Output Device</label>
         <select
           id="outputDevice"
-          
           onChange={(e) => setSelectedOutput(e.target.value)}
         >
           <option value="">Select an Output Device</option>
@@ -148,7 +153,7 @@ export default function EffectorPage() {
       </div>
 
       {/* エフェクト設定 */}
-      <div >
+      <div>
         <label>
           <input
             type="checkbox"
@@ -159,14 +164,9 @@ export default function EffectorPage() {
         </label>
       </div>
 
-      <button
-        onClick={startAudio}
-        
-      >
-        Start Audio
-      </button>
+      <button onClick={startAudio}>Start Audio</button>
 
-      <audio ref={audioElementRef} style={{ display: 'none' }} />
+      <audio ref={audioElementRef} style={{ display: "none" }} />
     </div>
   );
 }
