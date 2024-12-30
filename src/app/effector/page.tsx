@@ -106,17 +106,17 @@ export default function EffectorPage() {
   };
 
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">Effector Page</h1>
+    <div >
+      <h1 >Effector Page</h1>
 
       {/* 音声入力デバイス */}
-      <div className="mb-4">
-        <label htmlFor="inputDevice" className="block mb-2 font-semibold">
+      <div >
+        <label htmlFor="inputDevice" >
           Select Input Device
         </label>
         <select
           id="inputDevice"
-          className="border p-2 rounded"
+          
           onChange={(e) => setSelectedInput(e.target.value)}
         >
           <option value="">Select an Input Device</option>
@@ -129,13 +129,13 @@ export default function EffectorPage() {
       </div>
 
       {/* 音声出力デバイス */}
-      <div className="mb-4">
-        <label htmlFor="outputDevice" className="block mb-2 font-semibold">
+      <div >
+        <label htmlFor="outputDevice">
           Select Output Device
         </label>
         <select
           id="outputDevice"
-          className="border p-2 rounded"
+          
           onChange={(e) => setSelectedOutput(e.target.value)}
         >
           <option value="">Select an Output Device</option>
@@ -148,7 +148,7 @@ export default function EffectorPage() {
       </div>
 
       {/* エフェクト設定 */}
-      <div className="mb-4">
+      <div >
         <label>
           <input
             type="checkbox"
@@ -161,7 +161,7 @@ export default function EffectorPage() {
 
       <button
         onClick={startAudio}
-        className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+        
       >
         Start Audio
       </button>
