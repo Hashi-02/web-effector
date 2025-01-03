@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { DeviceSelector } from "./components/DeviceSelector";
 import { fetchDevices } from "./utils/fetchDevices";
 
@@ -9,76 +9,71 @@ export default function EffectorPage() {
   const [outputDevices, setOutputDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedInput, setSelectedInput] = useState<string | null>(null);
   const [selectedOutput, setSelectedOutput] = useState<string | null>(null);
-
-  const audioContextRef = useRef<AudioContext | null>(null);
+  const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
 
   useEffect(() => {
-    fetchDevices().then(({ inputDevices, outputDevices }) => {
+    const loadDevices = async () => {
+      const { inputDevices, outputDevices } = await fetchDevices();
+
       setInputDevices(inputDevices);
       setOutputDevices(outputDevices);
-    });
+      console.log(inputDevices, outputDevices);
+
+      if (inputDevices.length > 0) {
+        setSelectedInput(inputDevices[0].deviceId); // 最初の入力デバイス
+      }
+
+      if (outputDevices.length > 0) {
+        setSelectedOutput(outputDevices[0].deviceId); // 最初の出力デバイス
+      }
+    };
+
+    loadDevices();
   }, []);
 
-  const startAudio = async () => {
-    if (!selectedInput || !selectedOutput) {
-      alert("Please select both an input and an output device");
-      return;
-    }
+  // デバイス選択時に音声処理を自動開始
+  useEffect(() => {
+    const startAudio = async () => {
+      if (!selectedInput || !selectedOutput) {
+        return;
+      }
 
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          deviceId: selectedInput,
-          echoCancellation: false,
-          noiseSuppression: false,
-          autoGainControl: false,
-        },
-      });
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            deviceId: selectedInput,
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: false,
+          },
+        });
 
-      // AudioContextを低遅延モードで作成
-      const audioContext = new AudioContext({
-        latencyHint: "interactive", // 低遅延モード
-        sampleRate: 44100, // サンプルレートを固定
-      });
-      audioContextRef.current = audioContext;
+        const context =
+          audioContext || new AudioContext({ latencyHint: "interactive" });
+        setAudioContext(context);
 
-      // AudioWorkletモジュールをロード
-      console.log("Loading processor module...");
-      await audioContext.audioWorklet.addModule("/processor.js");
-      console.log("Processor module loaded successfully!");
+        const source = context.createMediaStreamSource(stream);
 
-      const source = audioContext.createMediaStreamSource(stream);
+        console.log("Loading processor module...");
+        await context.audioWorklet.addModule("/processor.js");
+        console.log("Processor module loaded successfully!");
 
-      // GainNodeを作成してゲイン調整
-      const inputGain = audioContext.createGain();
-      inputGain.gain.value = 1.0; // 必要に応じて調整
+        const workletNode = new AudioWorkletNode(context, "guitar-processor");
+        source.connect(workletNode);
+        workletNode.connect(context.destination);
 
-      // AudioWorkletNodeを作成
-      const workletNode = new AudioWorkletNode(
-        audioContext,
-        "guitar-processor"
-      );
+        console.log("Audio processing started successfully!");
+      } catch (error) {
+        console.error("Error starting audio processing:", error);
+      }
+    };
 
-      // 出力ゲインの追加
-      const outputGain = audioContext.createGain();
-      outputGain.gain.value = 1.0; // 必要に応じて調整
-
-      // ノード接続
-      source.connect(inputGain);
-      inputGain.connect(workletNode);
-      workletNode.connect(outputGain);
-      outputGain.connect(audioContext.destination);
-
-      console.log("Audio chain successfully started");
-    } catch (error) {
-      console.error("Error starting audio:", error);
-    }
-  };
+    startAudio();
+  }, [selectedInput, selectedOutput]); // 入力または出力デバイスが変更されるたびに実行
 
   return (
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">Effector Page</h1>
-
       {/* 音声入力デバイス */}
       <DeviceSelector
         devices={inputDevices}
@@ -94,13 +89,6 @@ export default function EffectorPage() {
         onChange={setSelectedOutput}
         label="Select Output Device"
       />
-
-      <button
-        onClick={startAudio}
-        className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
-      >
-        Start Audio
-      </button>
     </div>
   );
 }
