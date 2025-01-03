@@ -10,6 +10,9 @@ export default function EffectorPage() {
   const [selectedInput, setSelectedInput] = useState<string | null>(null);
   const [selectedOutput, setSelectedOutput] = useState<string | null>(null);
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
+  const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(
+    null
+  );
 
   useEffect(() => {
     const loadDevices = async () => {
@@ -35,10 +38,26 @@ export default function EffectorPage() {
   useEffect(() => {
     const startAudio = async () => {
       if (!selectedInput || !selectedOutput) {
+        console.log("Selected Input:", selectedInput);
+        console.log("Selected Output:", selectedOutput);
         return;
       }
 
       try {
+        // 古いAudioContextを停止
+        if (audioContext) {
+          audioContext.close();
+          setAudioContext(null);
+        }
+
+        // AudioElementを再利用または作成
+        let audioEl = audioElement;
+        if (!audioEl) {
+          audioEl = new Audio();
+          setAudioElement(audioEl);
+        }
+
+        // 入力デバイスをストリームとして取得
         const stream = await navigator.mediaDevices.getUserMedia({
           audio: {
             deviceId: selectedInput,
@@ -48,20 +67,20 @@ export default function EffectorPage() {
           },
         });
 
-        const context =
-          audioContext || new AudioContext({ latencyHint: "interactive" });
-        setAudioContext(context);
+        // HTMLAudioElementにストリームを設定
+        audioEl.srcObject = stream;
 
-        const source = context.createMediaStreamSource(stream);
+        // 出力デバイスを設定
+        if (audioEl.setSinkId) {
+          await audioEl.setSinkId(selectedOutput).catch((error) => {
+            console.error("Error setting sink ID:", error);
+          });
+        } else {
+          console.warn("setSinkId is not supported on this browser.");
+        }
 
-        console.log("Loading processor module...");
-        await context.audioWorklet.addModule("/processor.js");
-        console.log("Processor module loaded successfully!");
-
-        const workletNode = new AudioWorkletNode(context, "guitar-processor");
-        source.connect(workletNode);
-        workletNode.connect(context.destination);
-
+        // Audioを再生
+        audioEl.play();
         console.log("Audio processing started successfully!");
       } catch (error) {
         console.error("Error starting audio processing:", error);
