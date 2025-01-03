@@ -24,9 +24,6 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
         value={selectedDevice || ""}
         onChange={(e) => onChange(e.target.value)}
       >
-        <option value="" disabled>
-          Select a device
-        </option>
         {devices.map((device, index) => (
           <option key={device.deviceId || index} value={device.deviceId}>
             {device.label || `Unnamed Device (${device.deviceId})`}
